@@ -75,7 +75,7 @@ def update_progress(task_id, stage, percent, message):
 def process_page(task_id, url):
     try:
         update_progress(task_id, "reading", 10, "Reading webpage...")
-        content = asyncio.run(get_content_from_url(url))
+        content = (get_content_from_url(url))
         img_data = get_img_details(url)
         content = f'{content} + \n\n\n {img_data}'
      
@@ -123,7 +123,7 @@ def answer_the_query(question: str, url: str) -> str:
         n_results=40,
         where={"url": url},
     )
-
+    print(results)
     docs = results["documents"][0] if results["documents"] else []
   
    
