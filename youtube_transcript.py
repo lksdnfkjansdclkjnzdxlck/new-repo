@@ -1,5 +1,6 @@
 import os, requests
 import pandas as pd
+from urllib.parse import urlparse
 API_KEY = os.environ['API_KEY'] 
 url = 'https://transcriptapi.com/api/v2/youtube/transcript'
 def load_or_create_df(path) -> pd.DataFrame:
