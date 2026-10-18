@@ -1,8 +1,6 @@
-from youtube_transcript_api import YouTubeTranscriptApi
-from urllib.parse import urlparse, parse_qs
-import os
-import pandas as pd
-api = YouTubeTranscriptApi()
+import os, requests
+API_KEY = os.environ['API_KEY'] 
+url = 'https://transcriptapi.com/api/v2/youtube/transcript'
 def load_or_create_df(path) -> pd.DataFrame:
    
     if os.path.exists(path):
@@ -40,11 +38,11 @@ def get_youtube_transcript(url:str) -> str:
     video_id = get_youtube_id(url)
 
     try:
-        # Fetch the transcript
-        transcript = api.fetch(video_id)
-        full_text = " ".join([t.text for t in transcript])
-        print(full_text)
-        return full_text
+        params = {'video_url': video_id, 'format': 'json'}
+        r = requests.get(url, params=params, headers={'Authorization': 'Bearer ' + API_KEY}, timeout=30)
+        r.raise_for_status()
+        text_only = "\n".join(item["text"] for item in transcript)
+        return text_only
     except Exception as e:
-        print(f"An error occurred: {e}")
-        return (f"An error occurred: {e}")
+    # FIX: Wrap the error message string inside an Exception class
+        raise RuntimeError(f"An error occurred: {e}") from e
