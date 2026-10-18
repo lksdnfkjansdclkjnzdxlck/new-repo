@@ -43,6 +43,7 @@ def get_youtube_transcript(url:str) -> str:
         params = {'video_url': video_id, 'format': 'json'}
         r = requests.get(url, params=params, headers={'Authorization': 'Bearer ' + API_KEY}, timeout=30)
         r.raise_for_status()
+        transcript = r.json()['transcript']
         text_only = "\n".join(item["text"] for item in transcript)
         return text_only
     except Exception as e:
