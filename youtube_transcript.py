@@ -43,7 +43,8 @@ def get_youtube_transcript(url:str) -> str:
         # Fetch the transcript
         transcript = api.fetch(video_id)
         full_text = " ".join([t.text for t in transcript])
-        
+        print(full_text)
         return full_text
     except Exception as e:
+        print(f"An error occurred: {e}")
         return (f"An error occurred: {e}")
