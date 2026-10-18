@@ -20,7 +20,7 @@ def load_or_create_df(path) -> pd.DataFrame:
 df = load_or_create_df(r"C:\Users\Alvi\Desktop\agentic\incomplete_agent\content.csv"  ) # Load the CSV file into a DataFrame
 
 
-async def get_content_from_url(url: str) -> str:
+def get_content_from_url(url: str) -> str:
     if url in df['url'].values:
         return df[df['url'] == url]['content'].values[0]
     if not url or not url.strip():
@@ -57,7 +57,7 @@ async def get_content_from_url(url: str) -> str:
             ),
             "Accept-Language": "en-US,en;q=0.9",
         }
-            response = await requests.get(
+            response =  requests.get(
             url,
             headers=headers,
             timeout=20,
@@ -81,8 +81,8 @@ async def get_content_from_url(url: str) -> str:
             df.loc[len(df)] = [url, clean_text(text)]  # Append new content to DataFrame
             df.to_csv('content.csv', index=False)  # Save the updated DataFrame
             
-        except: 
-            text = 'This page do not allo automated request so i cant answer from it'
+        except ValueError as err: 
+            raise f'This page do not allo automated request so i cant answer from it {err}'
     return clean_text(text)
 
 def clean_text(text: str) -> str:
