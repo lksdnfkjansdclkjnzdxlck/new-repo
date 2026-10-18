@@ -158,7 +158,7 @@ def process_page(task_id, url):
 
         update_progress(task_id, "embedding", 55, "Generating embeddings and saving...")
         print(content)
-        ids = preprocess_data(content, url)
+        ids = preprocess_data(content, url, task_id)
         print(content)
         if not ids:
             raise ValueError("No text chunks were extracted.")
