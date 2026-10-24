@@ -6,7 +6,7 @@ from youtube_transcript import *
 import os
 import asyncio
 import pandas as pds
-from light_embed import TextEmbedding
+
 import numpy as np
 from vector_database import store_chunks
 load_dotenv()
