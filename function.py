@@ -12,11 +12,7 @@ from vector_database import store_chunks
 load_dotenv()
 
 
-# This downloads the model and its required config automatically
 
-model = TextEmbedding(
-    model_name_or_path="onnx-models/all-MiniLM-L6-v2-onnx"
-)
 tasks = {}
 tasks_lock = Lock()
 
