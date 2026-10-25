@@ -1,21 +1,31 @@
 from RewriteQuestion import rewrite_question
 from llm import *
-import re
 from vector_database import  retrieve_chunks
+@traceable(name="webby_rag_pipeline",run_type='chain')
+async def answer_the_query_stream(
+    question: str,
+    url: str,
+    session_id: str
+):
+    # 1. Rewrite the question
+    rewritten_question = rewrite_question(question)
 
 
-@traceable(name="webby_rag_pipeline")
-def answer_the_query(question: str, url: str, session_id:str) -> str:
-    question = rewrite_question(question)
-    data = retrieve_chunks(question,10,url)
+
+    # 2. Retrieve relevant chunks
+    data = retrieve_chunks(rewritten_question, 10, url)
+
+    # 3. Build context
     context = "\n\n".join(
-        f"[Chunk {i+1}]\n{item['text']}"
+        f"[Chunk {i + 1}]\n{item['text']}"
         for i, item in enumerate(data)
     )
 
-    answer = answer_the_given_question(question,context,session_id)
-    return answer,context
-
-
-
+    # 4. Stream the answer
+    async for chunk in answer_the_given_question_stream(
+        rewritten_question,
+        context,
+        session_id
+    ):
+        yield chunk
 
