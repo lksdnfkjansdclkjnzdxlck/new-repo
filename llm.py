@@ -8,11 +8,13 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_groq import ChatGroq
 from langsmith import traceable
+from fastapi.responses import StreamingResponse
+
 # 1. Load environment variables (API keys)
 load_dotenv()
 
 # 2. Initialize the LLM
-llm = ChatGroq(model="openai/gpt-oss-20b", temperature=0.7)
+llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0.7)
 
 # 3. Create a template for the prompt
 prompt = ChatPromptTemplate.from_messages([
@@ -65,9 +67,42 @@ chain_with_history = RunnableWithMessageHistory(
 
 # 8. Main execution function
 @traceable(name="generate_answer")
-def answer_the_given_question(question: str, context: str, session_id: str = "default") -> str:
+async def answer_the_given_question_stream(
+    question: str,
+    context: str,
+    session_id: str = "default"
+):
+    async for chunk in chain_with_history.astream(
+        {
+            "question": question,
+            "context": context,
+        },
+        config={
+            "configurable": {
+                "session_id": session_id
+            }
+        }
+    ):
+        if chunk:
+            yield chunk
+
+
+
+def answer_the_given_question(
+    question: str,
+    context: str,
+    session_id: str = "default"
+) -> str:
     response = chain_with_history.invoke(
-        {"question": question, "context": context},
-        config={"configurable": {"session_id": session_id}}
+        {
+            "question": question,
+            "context": context,
+        },
+        config={
+            "configurable": {
+                "session_id": session_id
+            }
+        }
     )
+
     return response
