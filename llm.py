@@ -14,7 +14,7 @@ from fastapi.responses import StreamingResponse
 load_dotenv()
 
 # 2. Initialize the LLM
-llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0.7)
+llm = ChatGroq(model="openai/gpt-oss-20b", temperature=0.7)
 
 # 3. Create a template for the prompt
 prompt = ChatPromptTemplate.from_messages([
@@ -25,7 +25,7 @@ Rules:
 3. If the context does not contain enough information, state that the answer is not available on the page.
 4. Give a concise answer that directly addresses the question.
 5. Every factual claim must be supported by the context.
-
+6. Dont answer like 'this script says', instead answer like 'in the given video'
 Answer the user's question ONLY based on the provided video transcript:
 {context}"""),
     MessagesPlaceholder(variable_name="history"),
@@ -87,22 +87,22 @@ async def answer_the_given_question_stream(
             yield chunk
 
 
+'''Added this function js for eveluation coz streaming wasnt working with evaulation script'''
+# def answer_the_given_question(
+#     question: str,
+#     context: str,
+#     session_id: str = "default"
+# ) -> str:
+#     response = chain_with_history.invoke(
+#         {
+#             "question": question,
+#             "context": context,
+#         },
+#         config={
+#             "configurable": {
+#                 "session_id": session_id
+#             }
+#         }
+#     )
 
-def answer_the_given_question(
-    question: str,
-    context: str,
-    session_id: str = "default"
-) -> str:
-    response = chain_with_history.invoke(
-        {
-            "question": question,
-            "context": context,
-        },
-        config={
-            "configurable": {
-                "session_id": session_id
-            }
-        }
-    )
-
-    return response
+#     return response
