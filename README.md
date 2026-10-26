@@ -1,158 +1,52 @@
-﻿# Webby Chat
+# Webby Chat
 
-Webby Chat is a Chrome extension and FastAPI backend for asking questions about the current webpage or YouTube video. The app extracts readable text, splits it into chunks, stores embeddings in ChromaDB, and answers questions using only the content that was indexed for that URL.
+Webby Chat is a Chrome extension with a FastAPI backend for asking questions about YouTube videos. It retrieves a video's transcript, indexes transcript chunks in Pinecone, and streams answers grounded in the retrieved context.
 
-## What it does
+## How it works
 
-- Analyzes the active browser tab when the extension is opened.
-- Supports normal web pages and YouTube URLs.
-- Extracts readable page text with `trafilatura` and transcripts with `youtube-transcript-api`.
-- Builds a local vector index in ChromaDB for retrieval-augmented generation.
-- Uses a Groq-backed LLM to answer grounded questions from the page/video context.
-- Keeps a short chat history per page so follow-up questions feel conversational.
-- Shows progress updates while the backend is processing a page.
+1. The extension sends the active tab URL to the backend.
+2. The backend retrieves the YouTube transcript and indexes it.
+3. Questions are rewritten for retrieval, matched to transcript chunks, and answered by a Groq-hosted language model.
+4. Answers stream into the extension popup. Chat history is saved per video in Chrome storage.
 
-## Project structure
-
-```text
-backend/
-  main.py                     FastAPI app and API routes
-  function.py                 Retrieval, chunking, indexing, progress updates
-  llm.py                     Groq chat model, prompt template, chat history
-  get_content.py             Web page extraction helpers
-  youtube_transcript.py      YouTube transcript retrieval helpers
-  getting_img_des_by_url.py  Image metadata extraction
-  image_description_llm.py   Optional image description generation via Gemini
-  context_compression.py     Context compression utility for retrieval
-  database/                  Local ChromaDB storage
-  evaluation/
-    evals.py                 Optional evaluation script
-    test.json                Sample evaluation dataset
-front-end/
-  manifest.json              Chrome extension manifest
-  popup.html                 Extension popup layout
-  popup.css                  Popup styles
-  popup.js                   Front-end API logic and UI behavior
-README.md
-requirements.txt
-content.csv
-```
-
-## Requirements
-
-- Python 3.10+
-- Google Chrome or another Chromium-based browser
-- Groq API key
-- Google API key for image description support (optional but used by the image-description pipeline)
+**Scope:** The current backend supports YouTube videos only; ordinary webpages are not supported.
 
 ## Setup
 
-1. Create and activate a virtual environment:
+Requirements: Python 3.10+, Chrome, and API credentials for Groq and Pinecone. The transcript module also requires an `API_KEY` environment variable.
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
+1. Create a `.env` file in the repository root:
 
-2. Install dependencies:
+   ```env
+   GROQ_API_KEY=your_groq_api_key
+   PINECONE_API_KEY=your_pinecone_api_key
+   API_KEY=your_transcript_api_key
+   ```
 
-```powershell
-pip install -r requirements.txt
-```
+2. Install dependencies and start the backend:
 
-3. Add environment variables in a `.env` file at the project root or inside `backend/`:
+   ```powershell
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   pip install -r requirements.txt
+   cd backend
+   uvicorn main:app --reload
+   ```
 
-```env
-GROQ_API_KEY=your_groq_api_key
-GOOGLE_API_KEY=your_google_api_key
-```
+3. In Chrome, open `chrome://extensions`, enable Developer mode, and choose **Load unpacked**. Select the `front-end` folder.
 
-4. Start the backend:
+The extension's API URL is configured in `front-end/popup.js`; update it and the host permission in `front-end/manifest.json` if using a different backend.
 
-```powershell
-cd backend
-uvicorn main:app --reload
-```
+## Evaluation
 
+The checked-in RAGAS results contain 10 questions about one YouTube video. Mean scores from that run:
 
+| Metric | Score |
+| --- | ---: |
+| Answer correctness | 84.3% |
+| Faithfulness | 91.8% |
+| Answer relevancy | 96.5% |
+| Context precision | 84.1% |
+| Context recall | 89.3% |
 
-## Load the extension
-
-1. Open `chrome://extensions`.
-2. Turn on Developer mode.
-3. Click Load unpacked.
-4. Choose the `front-end` folder in this repository.
-5. Keep the backend running and then open a normal webpage or a YouTube page and click the extension icon.
-
-The extension will trigger analysis for the active page automatically. Once the indexing finishes, you can ask natural-language questions in the popup.
-
-## API
-
-### POST /analyze
-
-Starts analysis for a page or video URL.
-
-Request body:
-
-```json
-{
-  "url": "https://example.com"
-}
-```
-
-Response:
-
-```json
-{
-  "task_id": "<uuid>"
-}
-```
-
-### GET /progress/{task_id}
-
-Fetches the current status of the background task.
-
-Example response:
-
-```json
-{
-  "stage": "complete",
-  "progress": 100,
-  "message": "Analysis complete!",
-  "error": false
-}
-```
-
-### POST /ask
-
-Asks a question based on the indexed content for a given URL.
-
-Request body:
-
-```json
-{
-  "url": "https://example.com",
-  "question": "What is this page about?"
-}
-```
-
-Response:
-
-```json
-{
-  "question": "What is this page about?",
-  "answer": "...",
-  "context": "..."
-}
-```
-
-## Local data
-
-The vector store is created in `backend/database`. If you want to reset stored embeddings and page chunks, delete that folder and restart the backend.
-
-## Notes
-
-- The extension is configured to call `https://extension-s-backend-7e95da56.fastapicloud.dev7` by default. If your API is running elsewhere, update `API_BASE` in `front-end/popup.js`.
-- CORS is intentionally permissive for local development. Restrict it before exposing the app beyond your machine.
-- `backend/evaluation/evals.py` is optional and can be used to benchmark the retrieval pipeline with sample questions.
-- The repository includes a local CSV file (`content.csv`) and uses it as part of the indexing workflow.
+These are evaluation metrics, **not a general accuracy guarantee**. The sample is small and covers only one video. The scores are in `backend/evaluation/ragas_results.csv`; test questions and references are in `backend/evaluation/test.json`. The evaluation script currently calls a disabled `/evaluate/answer` endpoint, so it cannot be rerun against the backend as-is.
