@@ -45,7 +45,7 @@ Return EXACTLY this format:
 
 chain = prompt | llm | parser
 
-@traceable(name="rewrite_question", run_type="chain")
+# @traceable(name="rewrite_question", run_type="chain")
 def rewrite_question(question:str)->str:
     new_question = chain.invoke(question)
     return new_question
