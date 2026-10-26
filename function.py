@@ -6,10 +6,10 @@ from youtube_transcript import *
 import os
 import asyncio
 import pandas as pds
-
 import numpy as np
-from vector_database import store_chunks
+from vector_database import store_chunks,video_chunks_exist
 load_dotenv()
+
 
 
 
@@ -43,32 +43,46 @@ def update_progress(task_id, stage, percent, message):
 
 def process_page(task_id, url):
     try:
-        update_progress(task_id, "reading", 10, "Reading webpage...")
-        content = (get_content_from_url(url))
- 
-     
+        if video_chunks_exist(url):
+            with tasks_lock:
+                tasks[task_id].update({
+                    "stage": "complete",
+                    "progress": 100,
+                    "message": "Existing chunks found. Ready to chat!",
+                    "error": False,
+                    "result": {
+                        "url": url,
+                        "chunks_stored": 0,
+                        "cached": True,
+                    },
+                })
+        else:        
+            update_progress(task_id, "reading", 10, "Reading webpage...")
+            content = (get_content_from_url(url))
+    
         
-        update_progress(task_id, "extracting", 35, "Extracting readable text...")
-        if not content.strip():
-            raise ValueError("No readable webpage content found.")
+            
+            update_progress(task_id, "extracting", 35, "Extracting readable text...")
+            if not content.strip():
+                raise ValueError("No readable webpage content found.")
 
-        update_progress(task_id, "embedding", 55, "Generating embeddings and saving...")
-        records_length = preprocess_data(content, url)
+            update_progress(task_id, "embedding", 55, "Generating embeddings and saving...")
+            records_length = preprocess_data(content, url)
 
-        if not records_length:
-            raise ValueError("No text chunks were extracted.")
+            if not records_length:
+                raise ValueError("No text chunks were extracted.")
 
-        with tasks_lock:
-            tasks[task_id].update({
-                "stage": "complete",
-                "progress": 100,
-                "message": "Analysis complete!",
-                "error": False,
-                "result": {
-                    "url": url,
-                    "chunks_stored": records_length,
-                },
-            })
+            with tasks_lock:
+                tasks[task_id].update({
+                    "stage": "complete",
+                    "progress": 100,
+                    "message": "Analysis complete!",
+                    "error": False,
+                    "result": {
+                        "url": url,
+                        "chunks_stored": records_length,
+                    },
+                })
 
     except Exception as error:
         with tasks_lock:
