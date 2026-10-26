@@ -45,8 +45,10 @@ def store_chunks(url: str, chunks: list[str]):
 
 
 
-@traceable(name="Pinecode_retrieval", run_type="retriever")
+# @traceable(name="Pinecode_retrieval", run_type="retriever")
 def retrieve_chunks(question: str, top_k: int, url: str):
+    if not question or not question.strip():
+        raise ValueError("The search query cannot be empty.")
     question = str(question)
 
     results = index.documents.search(
