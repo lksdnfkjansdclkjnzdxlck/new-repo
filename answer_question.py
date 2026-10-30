@@ -23,7 +23,7 @@ async def answer_the_query_stream(
 
     # 4. Stream the answer
     async for chunk in answer_the_given_question_stream(
-        rewritten_question,
+        question,
         context,
         session_id
     ):
