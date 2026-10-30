@@ -59,6 +59,10 @@ async def ask_question(request: AskRequest):
         media_type="text/plain"
     )
 
+@app.get("/health")
+async def health():
+    return {"status": "healthy"}
+
 
 
 '''Added this endpoint js for eveluation coz streaming wasnt working with evaulation script'''
